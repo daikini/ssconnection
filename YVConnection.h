@@ -15,10 +15,15 @@
 	id<YVConnectionDelegate> delegate;
 	NSURLConnection *urlConnection;
 	NSURLCredential *credential;
-	NSMutableData *receivedData;
+	
+	NSString *tempFilePath;
+	NSFileHandle *fileHandle;
 }
 
+@property (nonatomic, assign) id<YVConnectionDelegate> delegate;
 @property (nonatomic, retain) NSURLCredential *credential;
+
++ (YVConnection *)sharedConnection;
 
 - (void)request:(NSString *)methodName;
 - (void)request:(NSString *)methodName parameters:(NSDictionary *)parametersDictionary;

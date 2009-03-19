@@ -8,20 +8,70 @@
 
 #import "YVConnection.h"
 
-static NSString *kAPIURL = @"http://api.youversion.com";
+static NSString *kAPIURL = @"http://dev.api2.youversion.com";
 static NSString *kAPIVersion = @"1.0";
 static NSTimeInterval kTimeout = 60.0;
 
+static YVConnection *sharedConnection = nil;
+
 @implementation YVConnection
 
+@synthesize delegate;
 @synthesize credential;
 
+#pragma mark -
+#pragma mark Singleton
+#pragma mark -
+
++ (YVConnection *)sharedConnection {
+	@synchronized(self) {
+        if (sharedConnection == nil) {
+            [[self alloc] init]; // Assignment not done here
+        }
+    }
+    return sharedConnection;
+}
+
++ (id)allocWithZone:(NSZone *)zone {
+    @synchronized(self) {
+        if (sharedConnection == nil) {
+            sharedConnection = [super allocWithZone:zone];
+            return sharedConnection;  // Assignment and return on first allocation
+        }
+    }
+    return nil; // On subsequent allocation attempts return nil
+}
+
+- (id)copyWithZone:(NSZone *)zone {
+    return self;
+}
+
+- (id)retain {
+    return self;
+}
+
+- (unsigned)retainCount {
+    return UINT_MAX;  // Denotes an object that cannot be released
+}
+
+- (void)release {
+    // Do nothing
+}
+
+- (id)autorelease {
+    return self;
+}
+
+#pragma mark -
+#pragma mark Request Methods
+#pragma mark -
+
 - (void)request:(NSString *)methodName {
-	[self request:methodName parametersString:nil HTTPMethod:@"GET" credential:nil];
+	[self request:methodName parametersString:nil HTTPMethod:nil credential:nil];
 }
 
 - (void)request:(NSString *)methodName parameters:(NSDictionary *)parametersDictionary {
-	[self request:methodName parameters:parametersDictionary HTTPMethod:@"GET" credential:nil];
+	[self request:methodName parameters:parametersDictionary HTTPMethod:nil credential:nil];
 }
 
 - (void)request:(NSString *)methodName parameters:(NSDictionary *)parametersDictionary HTTPMethod:(NSString *)HTTPMethod credential:(NSURLCredential *)aCredential {
@@ -39,17 +89,14 @@ static NSTimeInterval kTimeout = 60.0;
 }
 
 - (void)request:(NSString *)methodName parametersString:(NSString *)parametersString {
-	[self request:methodName parametersString:parametersString HTTPMethod:@"GET" credential:nil];
+	[self request:methodName parametersString:parametersString HTTPMethod:nil credential:nil];
 }
 
 - (void)request:(NSString *)methodName parametersString:(NSString *)parametersString HTTPMethod:(NSString *)HTTPMethod credential:(NSURLCredential *)aCredential {
 	
-	// Cancel any current requests
-	[self cancel];
-	
 	// Build the URL string
-	NSString *urlString = [[NSString alloc] initWithFormat:@"%@/%@/%@/%@.plist?%@", 
-						   kAPIURL, kAPIVersion, methodName, parametersString];
+	NSString *urlString = [[NSString alloc] initWithFormat:@"%@/%@/%@.plist", 
+						   kAPIURL, kAPIVersion, methodName];
 	NSURL *requestUrl = [[NSURL alloc] initWithString:urlString];
 	[urlString release];
 	
@@ -66,16 +113,34 @@ static NSTimeInterval kTimeout = 60.0;
 		NSData *body = [[NSData alloc] initWithBytes:[parametersString UTF8String] length:contentLength];
 		[request setHTTPBody:body];
 		[body release];
+	} else {
+		urlString = [NSString stringWithFormat:@"%@?%@", urlString, parametersString];
 	}
 	
-	// Setup credential
-	if (aCredential != nil) {
-		self.credential = aCredential;
+	[self startRequest:request];
+	[request release];
+}
+
+- (void)startRequest:(NSURLRequest *)request {
+	
+	// Cancel any current requests
+	[self cancel];
+	
+	if (request == nil) {
+		return;
+	}
+	
+	// Generate the temp file name to store the plist data
+	// TODO: make this string more unique to prevent collisions
+	tempFilePath = [[NSString alloc] initWithFormat:@"%@yvconnection_temp_%i.plist", NSTemporaryDirectory(), [NSDate timeIntervalSinceReferenceDate]];
+	
+	// Create the temp file
+	if([[NSFileManager defaultManager] fileExistsAtPath:tempFilePath] == NO) {
+		[[NSFileManager defaultManager] createFileAtPath:tempFilePath contents:nil attributes:nil];
 	}
 	
 	// Initialize the connection
 	urlConnection = [[NSURLConnection alloc] initWithRequest:request delegate:self];
-	[request release];
 	
 	// Start the request
 	[urlConnection start];
@@ -89,8 +154,13 @@ static NSTimeInterval kTimeout = 60.0;
 	[credential release];
 	credential = nil;
 	
-	[receivedData release];
-	receivedData = nil;
+	// Remove temp file
+	if (tempFilePath != nil) {
+		[[NSFileManager defaultManager] removeItemAtPath:tempFilePath error:NULL];
+	}
+	
+	[tempFilePath release];
+	tempFilePath = nil;
 }
 
 - (void)dealloc {
@@ -103,23 +173,38 @@ static NSTimeInterval kTimeout = 60.0;
 #pragma mark -
 
 - (void)connection:(NSURLConnection *)connection didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge {
-	[[challenge sender] useCredential:credential forAuthenticationChallenge:challenge];
+	if (credential != nil) {
+		[[challenge sender] useCredential:credential forAuthenticationChallenge:challenge];
+	} else {
+		[self cancel];
+	}
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response {
-	receivedData = [[NSMutableData alloc] initWithCapacity:[response expectedContentLength]];
+	// Setup the file handle
+	fileHandle = [[NSFileHandle fileHandleForWritingAtPath:tempFilePath] retain];
+	[fileHandle truncateFileAtOffset:0];
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data {
-	[receivedData appendData:data];
+	[fileHandle writeData:data];
 }
 
 - (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
-	
+	[self cancel];
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
 	
+	NSLog(@"%i - %@", [fileHandle offsetInFile], tempFilePath);
+	[fileHandle closeFile];
+	
+	NSDictionary *response = [[NSDictionary alloc] initWithContentsOfFile:tempFilePath];
+	
+	//[self cancel];
+	
+	NSLog(@"%@", response);
+	[response release];
 }
 
 @end

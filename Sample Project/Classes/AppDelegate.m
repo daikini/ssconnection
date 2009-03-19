@@ -6,10 +6,10 @@
 //  Copyright Sam Soffes 2009. All rights reserved.
 //
 
-#import "Sample_ProjectAppDelegate.h"
-#import "Sample_ProjectViewController.h"
+#import "AppDelegate.h"
+#import "ViewController.h"
 
-@implementation Sample_ProjectAppDelegate
+@implementation AppDelegate
 
 @synthesize window;
 @synthesize viewController;
