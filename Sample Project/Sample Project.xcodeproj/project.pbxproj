@@ -16,7 +16,6 @@
 		B2AD900C0F7215A5002C1AEC /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B2AD90090F7215A5002C1AEC /* UIKit.framework */; };
 		B2AD90160F72169A002C1AEC /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B2AD90150F72169A002C1AEC /* ViewController.m */; };
 		B2AD902E0F7216F0002C1AEC /* ViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B2AD902D0F7216F0002C1AEC /* ViewController.xib */; };
-		B2B7A4E80F5FBFCA00AC03B2 /* YVConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = B2B7A4E70F5FBFCA00AC03B2 /* YVConnection.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,8 +34,6 @@
 		B2AD90140F72169A002C1AEC /* ViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
 		B2AD90150F72169A002C1AEC /* ViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
 		B2AD902D0F7216F0002C1AEC /* ViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ViewController.xib; sourceTree = "<group>"; };
-		B2B7A4E60F5FBFCA00AC03B2 /* YVConnection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = YVConnection.h; path = ../YVConnection.h; sourceTree = SOURCE_ROOT; };
-		B2B7A4E70F5FBFCA00AC03B2 /* YVConnection.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = YVConnection.m; path = ../YVConnection.m; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,8 +59,6 @@
 				B2AD90150F72169A002C1AEC /* ViewController.m */,
 				B2194FC60F722C8E00E57D83 /* SSConnection.h */,
 				B2194FC70F722C8E00E57D83 /* SSConnection.m */,
-				B2B7A4E60F5FBFCA00AC03B2 /* YVConnection.h */,
-				B2B7A4E70F5FBFCA00AC03B2 /* YVConnection.m */,
 			);
 			path = Classes;
 			sourceTree = "<group>";
@@ -173,7 +168,6 @@
 			files = (
 				1D60589B0D05DD56006BFB54 /* main.m in Sources */,
 				1D3623260D0F684500981E51 /* AppDelegate.m in Sources */,
-				B2B7A4E80F5FBFCA00AC03B2 /* YVConnection.m in Sources */,
 				B2AD90160F72169A002C1AEC /* ViewController.m in Sources */,
 				B2194FC80F722C8E00E57D83 /* SSConnection.m in Sources */,
 			);

@@ -7,12 +7,19 @@
 //
 
 #import "ViewController.h"
-#import "YVConnection.h"
+#import "SSConnection.h"
+
 
 @implementation ViewController
 
 - (void)viewDidLoad {
-	[[YVConnection sharedConnection] request:@"bible/verse"];
+	NSURL *baseURL = [[NSURL alloc] initWithString:@"http://dev.api2.youversion.com/1.0/"];
+	
+	NSURL *url = [[NSURL alloc] initWithString:@"bible/verse.plist?reference=John.3.16" relativeToURL:baseURL];
+	[[SSConnection sharedConnection] requestURL:url];
+	[url release];
+	
+	[baseURL release];
 }
 
 - (IBAction)refresh:(id)sender {

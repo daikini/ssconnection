@@ -25,6 +25,8 @@
 
 + (SSConnection *)sharedConnection;
 
+- (void)requestURL:(NSURL *)url;
+- (void)requestURL:(NSURL *)url HTTPMethod:(NSString *)HTTPMethod credential:(NSURLCredential *)aCredential;
 - (void)startRequest:(NSURLRequest *)request;
 - (void)cancel;
 

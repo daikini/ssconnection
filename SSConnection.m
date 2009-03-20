@@ -8,6 +8,7 @@
 
 #import "SSConnection.h"
 
+static NSTimeInterval kTimeout = 60.0;
 static SSConnection *sharedConnection = nil;
 
 @implementation SSConnection
@@ -62,6 +63,30 @@ static SSConnection *sharedConnection = nil;
 #pragma mark Request Methods
 #pragma mark -
 
+- (void)requestURL:(NSURL *)url {
+	[self requestURL:url HTTPMethod: nil credential:nil];
+}
+
+- (void)requestURL:(NSURL *)url HTTPMethod:(NSString *)HTTPMethod credential:(NSURLCredential *)aCredential {
+	NSMutableURLRequest* request = [[NSMutableURLRequest alloc] initWithURL:url 
+																cachePolicy:NSURLRequestReloadIgnoringLocalCacheData 
+															timeoutInterval:kTimeout];
+	
+	// Setup POST data
+	if ([HTTPMethod isEqual:@"POST"]) {
+		[request setHTTPMethod:HTTPMethod];
+		NSString *parametersString = [url parameterString];
+		NSInteger contentLength = [parametersString lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+		[request setValue:[NSString stringWithFormat:@"%d", contentLength] forHTTPHeaderField:@"Content-Length"];
+		NSData *body = [[NSData alloc] initWithBytes:[parametersString UTF8String] length:contentLength];
+		[request setHTTPBody:body];
+		[body release];
+	}
+	
+	[self startRequest:request];
+	[request release];
+}
+
 - (void)startRequest:(NSURLRequest *)request {
 	
 	// Cancel any current requests
@@ -73,8 +98,8 @@ static SSConnection *sharedConnection = nil;
 	
 	// Generate the temp file name to store the plist data
 	// TODO: make this string more unique to prevent collisions
-	tempFilePath = [[NSString alloc] initWithFormat:@"%@yvconnection_temp_%i.plist", NSTemporaryDirectory(), [NSDate timeIntervalSinceReferenceDate]];
-	
+	tempFilePath = [[NSString alloc] initWithFormat:@"%@ssconnection_temp_%i.plist", NSTemporaryDirectory(), [NSDate timeIntervalSinceReferenceDate]];
+		
 	// Create the temp file
 	if([[NSFileManager defaultManager] fileExistsAtPath:tempFilePath] == NO) {
 		[[NSFileManager defaultManager] createFileAtPath:tempFilePath contents:nil attributes:nil];
@@ -137,14 +162,16 @@ static SSConnection *sharedConnection = nil;
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
 	
-	NSLog(@"%i - %@", [fileHandle offsetInFile], tempFilePath);
 	[fileHandle closeFile];
+	[fileHandle release];
+	
+	NSLog(@"temp file path: %@, exists: %i", tempFilePath, [[NSFileManager defaultManager] fileExistsAtPath:tempFilePath]);
 	
 	NSDictionary *response = [[NSDictionary alloc] initWithContentsOfFile:tempFilePath];
 	
 	//[self cancel];
 	
-	NSLog(@"%@", response);
+	NSLog(@"dictionary description: %@", response);
 	[response release];
 }
 
