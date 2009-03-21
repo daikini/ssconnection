@@ -162,16 +162,12 @@ static SSConnection *sharedConnection = nil;
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
 	
-	[fileHandle closeFile];
-	[fileHandle release];
-	
-	NSLog(@"temp file path: %@, exists: %i", tempFilePath, [[NSFileManager defaultManager] fileExistsAtPath:tempFilePath]);
-	
 	NSDictionary *response = [[NSDictionary alloc] initWithContentsOfFile:tempFilePath];
 	
-	//[self cancel];
-	
-	NSLog(@"dictionary description: %@", response);
+	// Stop request and free up resources
+	[self cancel];
+
+	// TODO: send response to delegate
 	[response release];
 }
 
