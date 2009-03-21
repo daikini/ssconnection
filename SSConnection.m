@@ -168,6 +168,7 @@ static SSConnection *sharedConnection = nil;
 	[self cancel];
 
 	// TODO: send response to delegate
+	NSLog(@"response: %@", response);
 	[response release];
 }
 

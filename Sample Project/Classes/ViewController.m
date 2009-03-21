@@ -9,17 +9,13 @@
 #import "ViewController.h"
 #import "SSConnection.h"
 
-
 @implementation ViewController
 
 - (void)viewDidLoad {
-	NSURL *baseURL = [[NSURL alloc] initWithString:@"http://dev.api2.youversion.com/1.0/"];
 	
-	NSURL *url = [[NSURL alloc] initWithString:@"bible/verse.plist?reference=John.3.16" relativeToURL:baseURL];
+	NSURL *url = [[NSURL alloc] initWithString:@"http://samsoffes.github.com/iphone-plist/HelloWorld.plist"];
 	[[SSConnection sharedConnection] requestURL:url];
 	[url release];
-	
-	[baseURL release];
 }
 
 - (IBAction)refresh:(id)sender {
