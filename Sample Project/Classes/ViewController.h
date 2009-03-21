@@ -11,9 +11,7 @@
 
 @interface ViewController : UIViewController {
 
-	IBOutlet UILabel *methodLabel;
 	IBOutlet UITextView *outputView;
-	IBOutlet UIProgressView *progressView;
 }
 
 - (IBAction)refresh:(id)sender;

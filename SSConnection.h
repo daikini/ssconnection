@@ -15,16 +15,16 @@
 	id<SSConnectionDelegate> delegate;
 	NSURLConnection *urlConnection;
 	NSURLCredential *credential;
-	
+	NSURLRequest *request;
 	NSString *tempFilePath;
 	NSFileHandle *fileHandle;
+	NSUInteger totalReceivedBytes;
+	NSUInteger expectedBytes;
 }
 
 @property (nonatomic, assign) id<SSConnectionDelegate> delegate;
-@property (nonatomic, retain) NSURLCredential *credential;
 
-+ (SSConnection *)sharedConnection;
-
+- (SSConnection *)initWithDelegate:(id)aDelegate;
 - (void)requestURL:(NSURL *)url;
 - (void)requestURL:(NSURL *)url HTTPMethod:(NSString *)HTTPMethod credential:(NSURLCredential *)aCredential;
 - (void)startRequest:(NSURLRequest *)request;
@@ -34,5 +34,11 @@
 
 
 @protocol SSConnectionDelegate <NSObject>
+
+@optional
+
+- (void)connection:(SSConnection *)aConnection startedLoadingRequest:(NSURLRequest *)aRequest;
+- (void)connection:(SSConnection *)aConnection totalReceivedBytes:(NSUInteger)totalReceivedBytes expectedBytes:(NSUInteger)expectedBytes;
+- (void)connection:(SSConnection *)aConnection didFinishLoadingRequest:(NSURLRequest *)aRequest withResult:(id)result;
 
 @end

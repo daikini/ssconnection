@@ -9,54 +9,21 @@
 #import "SSConnection.h"
 
 static NSTimeInterval kTimeout = 60.0;
-static SSConnection *sharedConnection = nil;
 
 @implementation SSConnection
 
 @synthesize delegate;
-@synthesize credential;
 
-#pragma mark -
-#pragma mark Singleton
-#pragma mark -
-
-+ (SSConnection *)sharedConnection {
-	@synchronized(self) {
-        if (sharedConnection == nil) {
-            [[self alloc] init]; // Assignment not done here
-        }
-    }
-    return sharedConnection;
+- (SSConnection *)initWithDelegate:(id)aDelegate {
+	if (self = [super init]) {
+		self.delegate = aDelegate;
+	}
+	return self;
 }
 
-+ (id)allocWithZone:(NSZone *)zone {
-    @synchronized(self) {
-        if (sharedConnection == nil) {
-            sharedConnection = [super allocWithZone:zone];
-            return sharedConnection;  // Assignment and return on first allocation
-        }
-    }
-    return nil; // On subsequent allocation attempts return nil
-}
-
-- (id)copyWithZone:(NSZone *)zone {
-    return self;
-}
-
-- (id)retain {
-    return self;
-}
-
-- (unsigned)retainCount {
-    return UINT_MAX;  // Denotes an object that cannot be released
-}
-
-- (void)release {
-    // Do nothing
-}
-
-- (id)autorelease {
-    return self;
+- (void)dealloc {
+	[self cancel];
+	[super dealloc];
 }
 
 #pragma mark -
@@ -68,31 +35,31 @@ static SSConnection *sharedConnection = nil;
 }
 
 - (void)requestURL:(NSURL *)url HTTPMethod:(NSString *)HTTPMethod credential:(NSURLCredential *)aCredential {
-	NSMutableURLRequest* request = [[NSMutableURLRequest alloc] initWithURL:url 
+	NSMutableURLRequest* aRequest = [[NSMutableURLRequest alloc] initWithURL:url 
 																cachePolicy:NSURLRequestReloadIgnoringLocalCacheData 
 															timeoutInterval:kTimeout];
 	
 	// Setup POST data
 	if ([HTTPMethod isEqual:@"POST"]) {
-		[request setHTTPMethod:HTTPMethod];
+		[aRequest setHTTPMethod:HTTPMethod];
 		NSString *parametersString = [url parameterString];
 		NSInteger contentLength = [parametersString lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
-		[request setValue:[NSString stringWithFormat:@"%d", contentLength] forHTTPHeaderField:@"Content-Length"];
+		[aRequest setValue:[NSString stringWithFormat:@"%d", contentLength] forHTTPHeaderField:@"Content-Length"];
 		NSData *body = [[NSData alloc] initWithBytes:[parametersString UTF8String] length:contentLength];
-		[request setHTTPBody:body];
+		[aRequest setHTTPBody:body];
 		[body release];
 	}
 	
-	[self startRequest:request];
-	[request release];
+	[self startRequest:aRequest];
+	[aRequest release];
 }
 
-- (void)startRequest:(NSURLRequest *)request {
+- (void)startRequest:(NSURLRequest *)aRequest {
 	
 	// Cancel any current requests
 	[self cancel];
 	
-	if (request == nil) {
+	if (aRequest == nil) {
 		return;
 	}
 	
@@ -105,11 +72,19 @@ static SSConnection *sharedConnection = nil;
 		[[NSFileManager defaultManager] createFileAtPath:tempFilePath contents:nil attributes:nil];
 	}
 	
+	// Retain the request
+	request = [aRequest retain];
+	
 	// Initialize the connection
 	urlConnection = [[NSURLConnection alloc] initWithRequest:request delegate:self];
 	
 	// Start the request
 	[urlConnection start];
+	
+	// Notify the delegate the request started
+	if ([delegate respondsToSelector:@selector(connection:startedLoadingRequest:)]) {
+		[delegate connection:self startedLoadingRequest:request];
+	}
 }
 
 - (void)cancel {
@@ -120,6 +95,9 @@ static SSConnection *sharedConnection = nil;
 	[credential release];
 	credential = nil;
 	
+	[request release];
+	request = nil;
+	
 	// Remove temp file
 	if (tempFilePath != nil) {
 		[[NSFileManager defaultManager] removeItemAtPath:tempFilePath error:NULL];
@@ -127,11 +105,6 @@ static SSConnection *sharedConnection = nil;
 	
 	[tempFilePath release];
 	tempFilePath = nil;
-}
-
-- (void)dealloc {
-	[self cancel];
-	[super dealloc];
 }
 
 #pragma mark -
@@ -142,6 +115,7 @@ static SSConnection *sharedConnection = nil;
 	if (credential != nil) {
 		[[challenge sender] useCredential:credential forAuthenticationChallenge:challenge];
 	} else {
+		// TODO: notify the delegate of an error
 		[self cancel];
 	}
 }
@@ -150,26 +124,40 @@ static SSConnection *sharedConnection = nil;
 	// Setup the file handle
 	fileHandle = [[NSFileHandle fileHandleForWritingAtPath:tempFilePath] retain];
 	[fileHandle truncateFileAtOffset:0];
+	
+	expectedBytes = [response expectedContentLength];
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data {
 	[fileHandle writeData:data];
+	totalReceivedBytes += [data length];
+	
+	// Send an update to the delegate
+	if ([delegate respondsToSelector:@selector(connection:totalReceivedBytes:expectedBytes:)]) {
+		NSLog(@"%i / %i", totalReceivedBytes, expectedBytes);
+		[delegate connection:self totalReceivedBytes:totalReceivedBytes expectedBytes:expectedBytes];
+	}
 }
 
 - (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
 	[self cancel];
+	// TODO: notify the delegate
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
 	
-	NSDictionary *response = [[NSDictionary alloc] initWithContentsOfFile:tempFilePath];
+	// TODO: Support arrays as the root
+	NSDictionary *result = [[NSDictionary alloc] initWithContentsOfFile:tempFilePath];
+
+	// Send the result to the delegate
+	if ([delegate respondsToSelector:@selector(connection:didFinishLoadingRequest:withResult:)]) {
+		[delegate connection:self didFinishLoadingRequest:request withResult:result];
+	}
+	
+	[result release];
 	
 	// Stop request and free up resources
 	[self cancel];
-
-	// TODO: send response to delegate
-	NSLog(@"response: %@", response);
-	[response release];
 }
 
 @end
