@@ -17,8 +17,23 @@
 }
 
 - (IBAction)refresh:(id)sender {
-	NSURL *url = [[NSURL alloc] initWithString:@"http://samsoffes.github.com/iphone-plist/HelloWorld.plist"];
-	SSConnection *connection =  [[SSConnection alloc] initWithDelegate:self];
+	outputView.text = @"Loading...";
+	
+	NSInteger urlIndex = 0;
+	if ([sender isKindOfClass:[UISegmentedControl class]]) {
+		urlIndex = [sender selectedSegmentIndex];
+	}
+	NSString *basePath = @"https://github.com/daikini/ssconnection/raw/master/Sample%20Project";
+	
+	NSArray *urls = [NSArray arrayWithObjects:
+					 @"HelloWorld-XML-Dictionary.plist",
+					 @"HelloWorld-Binary-Dictionary.plist",
+					 @"HelloWorld-XML-Array.plist",
+					 @"HelloWorld-Binary-Array.plist",
+					 nil];
+	
+	NSURL *url = [[NSURL alloc] initWithString:[NSString stringWithFormat:@"%@/%@", basePath, [urls objectAtIndex:urlIndex]]];
+	SSConnection *connection = [[SSConnection alloc] initWithDelegate:self];
 	[connection requestURL:url];
 	[url release];
 }
@@ -29,6 +44,7 @@
 
 - (void)connection:(SSConnection *)aConnection didFinishLoadingRequest:(NSURLRequest *)aRequest withResult:(id)result {
 	outputView.text = [result description];
+	[aConnection release];
 }
 
 @end

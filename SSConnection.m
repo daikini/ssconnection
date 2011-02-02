@@ -145,16 +145,14 @@ static NSTimeInterval kTimeout = 60.0;
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
+	NSData *data = [[NSData alloc] initWithContentsOfFile:tempFilePath];
+	id result = [NSPropertyListSerialization propertyListWithData:data options:0 format:NULL error:NULL];
+	[data release];
 	
-	// TODO: Support arrays as the root
-	NSDictionary *result = [[NSDictionary alloc] initWithContentsOfFile:tempFilePath];
-
 	// Send the result to the delegate
 	if ([delegate respondsToSelector:@selector(connection:didFinishLoadingRequest:withResult:)]) {
 		[delegate connection:self didFinishLoadingRequest:request withResult:result];
 	}
-	
-	[result release];
 	
 	// Stop request and free up resources
 	[self cancel];
