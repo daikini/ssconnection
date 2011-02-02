@@ -64,9 +64,8 @@ static NSTimeInterval kTimeout = 60.0;
 	}
 	
 	// Generate the temp file name to store the plist data
-	// TODO: make this string more unique to prevent collisions
-	tempFilePath = [[NSString alloc] initWithFormat:@"%@ssconnection_temp_%i.plist", NSTemporaryDirectory(), [NSDate timeIntervalSinceReferenceDate]];
-		
+	tempFilePath = [[NSString alloc] initWithFormat:@"%@ssconnection_temp_%@.plist", NSTemporaryDirectory(), [[NSProcessInfo processInfo] globallyUniqueString]];
+
 	// Create the temp file
 	if([[NSFileManager defaultManager] fileExistsAtPath:tempFilePath] == NO) {
 		[[NSFileManager defaultManager] createFileAtPath:tempFilePath contents:nil attributes:nil];
