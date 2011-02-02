@@ -145,7 +145,7 @@ static NSTimeInterval kTimeout = 60.0;
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
 	NSData *data = [[NSData alloc] initWithContentsOfFile:tempFilePath];
-	id result = [NSPropertyListSerialization propertyListWithData:data options:0 format:NULL error:NULL];
+	id result = [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListImmutable format:NULL error:NULL];
 	[data release];
 	
 	// Send the result to the delegate
